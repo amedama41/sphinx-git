@@ -194,27 +194,27 @@ class GitChangelog(GitDirectiveBase):
                         nodes.emphasis(text=str(date_str))]
             item.append(par)
             if detailed_message and not self.options.get('hide_details'):
-                detailed_message = detailed_message.strip()
-                style = self.options.get('detailed-message-style', None)
-                if style == 'rst':
-                    node = nodes.Element()
-                    self.state.nested_parse(
-                        StringList(detailed_message.splitlines()), 0, node)
-                    item.extend(node.children)
-                elif style == 'line':
-                    lines = detailed_message.splitlines()
-                    line_block = nodes.line_block()
-                    line_block.extend(
-                        (nodes.line(text=line) for line in lines))
-                    item.append(line_block)
-                elif style == 'pre' or \
-                        self.options.get('detailed-message-pre', False):
-                    item.append(
-                        nodes.literal_block(text=detailed_message))
-                else:
-                    item.append(nodes.paragraph(text=detailed_message))
+                self._append_detailed_message(item, detailed_message)
             list_node.append(item)
         return [list_node]
+
+    def _append_detailed_message(self, item, detailed_message):
+        detailed_message = detailed_message.strip()
+        style = self.options.get('detailed-message-style', None)
+        if style == 'rst':
+            node = nodes.Element()
+            self.state.nested_parse(
+                StringList(detailed_message.splitlines()), 0, node)
+            item.extend(node.children)
+        elif style == 'line':
+            lines = detailed_message.splitlines()
+            line_block = nodes.line_block()
+            line_block.extend((nodes.line(text=line) for line in lines))
+            item.append(line_block)
+        elif style == 'pre' or self.options.get('detailed-message-pre', False):
+            item.append(nodes.literal_block(text=detailed_message))
+        else:
+            item.append(nodes.paragraph(text=detailed_message))
 
 
 def setup(app):
