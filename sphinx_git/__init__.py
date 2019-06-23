@@ -19,6 +19,7 @@ from datetime import datetime
 import six
 from docutils import nodes
 from docutils.parsers.rst import Directive, directives
+from docutils.statemachine import StringList
 from git import Repo
 
 
@@ -195,7 +196,12 @@ class GitChangelog(GitDirectiveBase):
             if detailed_message and not self.options.get('hide_details'):
                 detailed_message = detailed_message.strip()
                 style = self.options.get('detailed-message-style', None)
-                if style == 'line':
+                if style == 'rst':
+                    node = nodes.Element()
+                    self.state.nested_parse(
+                        StringList(detailed_message.splitlines()), 0, node)
+                    item.extend(node.children)
+                elif style == 'line':
                     lines = detailed_message.splitlines()
                     line_block = nodes.line_block()
                     line_block.extend(

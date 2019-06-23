@@ -134,6 +134,43 @@ class TestWithRepository(ChangelogTestCase):
             'more info</literal_block>'
         )
 
+    def test_single_commit_rst_detail_lines(self):
+        self.repo.index.commit(
+            'my root commit\n\nadditional information\n\n'
+            '- item1: **strong**\n'
+            '- item2: *emphasis*'
+        )
+        self.changelog.options.update({'detailed-message-style': 'rst'})
+
+        def handle_nested_parse(lines, offset, node):
+            from docutils import nodes
+            node.append(nodes.paragraph(text='additional information'))
+            bullet_list = nodes.bullet_list()
+            p = nodes.paragraph('', 'item1: ', nodes.strong(text='strong'))
+            bullet_list.append(nodes.list_item('', p))
+            p = nodes.paragraph('', 'item2: ', nodes.emphasis(text='emphasis'))
+            bullet_list.append(nodes.list_item('', p))
+            node.append(bullet_list)
+
+        self.changelog.state.nested_parse.side_effect = handle_nested_parse
+        nodes = self.changelog.run()
+        list_markup = BeautifulSoup(str(nodes[0]), features='xml')
+        item = list_markup.bullet_list.list_item
+        children = list(item.childGenerator())
+        assert_equal(3, len(children))
+        assert_equal(
+            str(children[1]),
+            '<paragraph>additional information</paragraph>'
+        )
+        assert_equal(
+            str(children[2]),
+            '<bullet_list><list_item>'
+            '<paragraph>item1: <strong>strong</strong></paragraph>'
+            '</list_item><list_item>'
+            '<paragraph>item2: <emphasis>emphasis</emphasis></paragraph>'
+            '</list_item></bullet_list>'
+        )
+
     def test_single_commit_line_blocked_detail_lines(self):
         self.repo.index.commit(
             'my root commit\n\nadditional information\nmore info'
