@@ -267,6 +267,39 @@ class TestWithRepository(ChangelogTestCase):
         bullet_list = list_markup.bullet_list
         assert_equal(2, len(bullet_list.findAll('list_item')), nodes)
 
+    def test_exclude_filter(self):
+        self.repo.index.commit('initial')
+        for file_name in ['abc.txt', 'bcd.txt', 'abc.other', 'atxt']:
+            full_path = os.path.join(self.repo.working_tree_dir, file_name)
+            f = open(full_path, 'w+')
+            f.close()
+            self.repo.index.add([full_path])
+            self.repo.index.commit('commit with file {}'.format(file_name))
+        self.repo.index.commit('commit without file')
+
+        self.changelog.options.update({'exclude_filter': 'a.*txt'})
+        nodes = self.changelog.run()
+        assert_equal(1, len(nodes))
+        list_markup = BeautifulSoup(str(nodes[0]), features='xml')
+        assert_equal(1, len(list_markup.findAll('bullet_list')))
+
+        bullet_list = list_markup.bullet_list
+        assert_equal(2, len(bullet_list.findAll('list_item')), nodes)
+
+        next_file = os.path.join(self.repo.working_tree_dir, 'atxt')
+        f = open(next_file, 'w+')
+        f.close()
+        self.repo.index.add([next_file])
+        self.repo.index.commit('show me')
+
+        nodes = self.changelog.run()
+        assert_equal(1, len(nodes), nodes)
+        list_markup = BeautifulSoup(str(nodes[0]), features='xml')
+        assert_equal(1, len(list_markup.findAll('bullet_list')))
+
+        bullet_list = list_markup.bullet_list
+        assert_equal(2, len(bullet_list.findAll('list_item')), nodes)
+
     def test_single_commit_hide_details(self):
         self.repo.index.commit(
             'Another commit\n\nToo much information'
