@@ -134,6 +134,38 @@ class TestWithRepository(ChangelogTestCase):
             'more info</literal_block>'
         )
 
+    def test_single_commit_line_blocked_detail_lines(self):
+        self.repo.index.commit(
+            'my root commit\n\nadditional information\nmore info'
+        )
+        self.changelog.options.update({'detailed-message-style': 'line'})
+        nodes = self.changelog.run()
+        list_markup = BeautifulSoup(str(nodes[0]), features='xml')
+        item = list_markup.bullet_list.list_item
+        children = list(item.childGenerator())
+        assert_equal(2, len(children))
+        assert_equal(
+            str(children[1]),
+            '<line_block><line>additional information</line>'
+            '<line>more info</line></line_block>'
+        )
+
+    def test_single_commit_literal_blocked_detail_lines(self):
+        self.repo.index.commit(
+            'my root commit\n\nadditional information\nmore info'
+        )
+        self.changelog.options.update({'detailed-message-style': 'pre'})
+        nodes = self.changelog.run()
+        list_markup = BeautifulSoup(str(nodes[0]), features='xml')
+        item = list_markup.bullet_list.list_item
+        children = list(item.childGenerator())
+        assert_equal(2, len(children))
+        assert_equal(
+            str(children[1]),
+            '<literal_block xml:space="preserve">additional information\n'
+            'more info</literal_block>'
+        )
+
     def test_more_than_ten_commits(self):
         for n in range(15):
             self.repo.index.commit('commit #{0}'.format(n))

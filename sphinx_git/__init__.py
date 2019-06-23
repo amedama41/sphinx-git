@@ -112,6 +112,7 @@ class GitChangelog(GitDirectiveBase):
     option_spec = {
         'revisions': directives.nonnegative_int,
         'rev-list': six.text_type,
+        'detailed-message-style': six.text_type,
         'detailed-message-pre': bool,
         'filename_filter': six.text_type,
         'hide_author': bool,
@@ -186,7 +187,15 @@ class GitChangelog(GitDirectiveBase):
             item.append(par)
             if detailed_message and not self.options.get('hide_details'):
                 detailed_message = detailed_message.strip()
-                if self.options.get('detailed-message-pre', False):
+                style = self.options.get('detailed-message-style', None)
+                if style == 'line':
+                    lines = detailed_message.splitlines()
+                    line_block = nodes.line_block()
+                    line_block.extend(
+                        (nodes.line(text=line) for line in lines))
+                    item.append(line_block)
+                elif style == 'pre' or \
+                        self.options.get('detailed-message-pre', False):
                     item.append(
                         nodes.literal_block(text=detailed_message))
                 else:
