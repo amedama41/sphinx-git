@@ -117,6 +117,10 @@ def get_details_style(argument):
     return directives.choice(argument, ['pre', 'rst', 'md'])
 
 
+def get_flag(argument):
+    return argument is None or argument.strip() not in ['0', 'False']
+
+
 # pylint: disable=too-few-public-methods
 class GitChangelog(GitDirectiveBase):
 
@@ -124,12 +128,12 @@ class GitChangelog(GitDirectiveBase):
         'revisions': directives.nonnegative_int,
         'rev-list': six.text_type,
         'detailed-message-style': get_details_style,
-        'detailed-message-pre': bool,
-        'detailed-message-strong': bool,
+        'detailed-message-pre': get_flag,
+        'detailed-message-strong': get_flag,
         'filename_filter': six.text_type,
-        'hide_author': bool,
-        'hide_date': bool,
-        'hide_details': bool,
+        'hide_author': get_flag,
+        'hide_date': get_flag,
+        'hide_details': get_flag,
         'repo-dir': six.text_type,
     }
 
@@ -147,7 +151,7 @@ class GitChangelog(GitDirectiveBase):
                 'detailed-message-style is md but recommonmark is not'
                 ' installed; processing ignoring detailed-message-style.')
         if detailed_message_style is not None and \
-                'detailed-message-pre' in self.options:
+                self.options.get('detailed-message-pre', False):
             self.state.document.reporter.warning(
                 'Both detailed-message-style and detailed-message-pre options'
                 ' given; proceeding using only detailed-message-style.',
